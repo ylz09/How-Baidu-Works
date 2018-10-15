@@ -1,0 +1,43 @@
+Problems:
+There are many timeout due to the overloaded BC which means Basic Control of Basic Search nodes. 
+There are several different type of BC and BS, while history BS is largest BS and it's most time consuming one.
+So the goal of this project is to reduce the number of returned docs by history BS, which is originally 600 docs.
+The current bandwidth is about 70Mb/s. 
+
+System analysis:
+1st, history BS return 600 docs to BC, causing BC received results more than 1000 docs. 
+2nd, BC only 1000 docs to AC, so this a waster of bandwith.
+3rd, the percentage of queries whose number of results between (300, 600] is around 1.5%;
+4th, BC didn't hit cache and inquery BS is around 17%
+5th, BC cache rate is more than 50%, the probablity of results more than 1000 docs is 27%
+Conclusion: 
+	1. there are too many docs returned by BS to BC
+	2. we need reduce the number and at the same time guarentee the BC received 1000 docs.
+
+From the logs of 4 history BC， we learned that:
+	1. cache hit rates are all 63%
+	2. miss cache & return more than 1000 docs:
+		machie1: 23.8%
+		machie2: 23.9%
+		machie3: 23.9%
+		machie4: 23.9%
+	3. by reducing the returned result, we enhanced the BC cache rate
+	4. the queries of BS decrease from 10,000,000 to 8,000,000
+		Before: 10889034 10921454 11482483 10762879
+		After:  8299255 8245994 8239223 8242547
+	5. queries return more than 1000 docs:
+		Before: 2008179 2006561 2004525 2006685
+		After:  1978905 1973440 1975528 1971650 
+	6. we know the rate of queries of 1000+ is not reduce.
+	7. by doing this experiment, we reduce the BS return number from 600 to 200
+
+After the the bandwidth of the 4 machine:
+grep bond0 band.data | awk 'BEGIN{sum=0}{sum+=$6+$7}END{sum/=NR;print sum}' 
+10.77.104.142 47261
+10.77.104.143 45363.7
+10.77.104.144 54905.5
+10.77.104.145 49998.9
+And the timeout problem is solved!
+
+
+
